@@ -1,0 +1,5 @@
+Hello {{ username }}, we've detected you are using our team's slack. 
+please take a minute to activate your account in the following link. 
+
+{{ registration_link }}
+

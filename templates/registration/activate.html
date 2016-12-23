@@ -1,0 +1,62 @@
+{% extends "registration/base.html" %}{% load staticfiles %}
+{% block headstyles %}{% endblock %}
+{% block headscripts %} {% endblock %}
+
+{% block content %}
+{% autoescape off %}
+
+<!-- /#content -->
+
+<section id="content" class="body">
+ 
+  <ol id="posts-list" class="hfeed">
+  
+    
+	<li><article class="hentry"> 
+	
+	  <header>
+	    <h2 class="entry-title">
+		  	<form method="post" action="">
+			<table>
+			<tr>
+			    <td>email</td>
+			    <td><input autofocus="" id="email" maxlength="254" name="email" type="text" required /></td>
+			</tr>
+			<tr>
+			    <td>password</td>
+			    <td><input id="password" name="password" type="password" required /></td>
+			</tr>
+			<tr>
+			    <td>password repeat</td>
+			    <td><input id="password_repeat" name="password_repeat" type="password" required /></td>
+			</tr>			
+			<tr>
+			    <td></td>
+			    <td><input type="submit" value="activate"></td>
+			</tr>
+			</table>						
+			
+			<input type="hidden" name="key" value="{{ DATA.key }}" />
+			<input type="hidden" name="username" value="{{ DATA.username }}" />
+			{% csrf_token %}
+			</form>
+					    
+		</h2>
+	  </header>
+	     	 
+           
+	</article></li>	
+	
+{% if DATA.errors %}
+	<li><article class="hentry"> 
+		<p>{{ DATA.errors }}</p>
+	</article></li>
+{% endif %}	
+			  
+  </ol><!-- /#posts-list -->
+ 
+</section>
+
+<!-- /#content -->
+
+{% endautoescape %} {% endblock %}

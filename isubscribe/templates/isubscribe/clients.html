@@ -1,0 +1,158 @@
+{% extends "isubscribe/base.html" %}{% load staticfiles %}{% load isubscribe_extras %}
+{% block headstyles %}{% endblock %}
+{% block headscripts %} {% endblock %}
+
+{% block head %}
+
+<script>
+function rmClient(client, tr_id){
+	var postData = {client: client, csrfmiddlewaretoken: '{{ csrf_token }}'};
+	var formURL = '{% url 'rmclient' %}';
+	$.ajax({
+        url : formURL,
+        type: "POST",
+        data : postData,
+        success:function(data, textStatus, jqXHR){
+        	if (data.result == 'okay'){
+		  		$('#' + tr_id).remove();						  		
+		  	} else {
+		  		alert( "Request failed: " + data.result );
+		  	}  	
+            return;
+        },
+        error: function(jqXHR, textStatus, errorThrown){
+            alert( "Request failed: " + jqXHR.responseText );
+            //$('#contactModal .errors').remove();
+            //$('#contactModal #modalContactBody').append('<p class="errors">' + jqXHR.responseText + '</p>');      
+        }
+    });
+}
+</script>
+
+{% endblock %} 
+
+
+{% block nav %}        
+	<li><a href="{% url 'events' %}">events</a></li>
+	<li><a href="{% url 'entities' %}">iSubscribe</a></li>
+	<li class="active"><a href="{% url 'clients' %}">clients</a></li>
+	<li><a href="{% url 'subscriptions' %}">subscriptions</a></li>
+	<li><a href="{% url 'onduty' %}">on-duty</a></li>
+{% endblock %}
+
+
+{% block content %}
+{% autoescape off %}
+
+<section id="content" class="body">
+ 
+  <ol id="posts-list" class="hfeed">
+  
+  	<li><article class="hentry"> 
+	
+	  <header>
+	  	<form method="get">
+	    	<h2 class="entry-title">		  	
+				<input id="client-filter" type="text" name="client-filter">		           
+			</h2>
+		</form>
+	  </header>
+	  
+	<script>
+		$('#client-filter').keypress(function(e) {			
+			if (e.keyCode === 10 || e.keyCode === 13){
+        		e.preventDefault();
+        		return false;
+        	}
+		});
+		
+		$("#client-filter").on("keyup", function(e) {
+			e.preventDefault();
+		    var value = $(this).val().toLowerCase();
+		    $("table tr").each(function(index) {
+	            $row = $(this);
+	
+	            var entity = $row.find("td:nth-child(2)").text().toLowerCase();            
+	
+	            //if ((entity.indexOf(value) > -1) && (value.length > 0)) {
+	            if (matchRegExRule(entity, value) && (value.length > 0)) {
+	                $(this).show();
+	            }
+	            else {
+	                $(this).hide();
+	            }
+		    });
+		});
+	</script>
+		  
+	  <footer class="post-info">
+        <abbr class="published" title="Filter button">
+          Search
+        </abbr>
+ 
+        <address class="vcard author">
+          <a class="url fn" href="" id="reset">show all</a>
+          <script>
+          	$('#reset').click(function(e){
+          		e.preventDefault();
+			    $("#client-filter").val("");
+			    $("table tr").each(function(index) {
+		            $div = $(this);          
+		            var entity = $div.text();
+		            $(this).show();		            
+			    });
+			    return false;
+			});
+		  </script>
+        </address>
+               
+        
+      </footer>	
+           
+	</article></li>
+  
+  
+  	<li><article>
+  	  <div>
+  	    <table>
+  	    <tbody id="msgbox">
+  	    {% autoescape on %}
+  		{%for key, data in DATA.items %}
+  			<tr id="{{key|entity_id}}">
+  				<td class="row-title">
+					<a href="javascript:rmClient('{{key}}', '{{key|entity_id}}');"><img src="{% static "isubscribe/images/delete.png" %}" alt="delete"></a>
+				</td>
+				<td class="row-title">
+					{{key}}
+				</td> 
+				<td class="row-content">
+					<ul>
+					{%for subscription in data.subscriptions %}
+						<li>
+							subscription : {{subscription}}
+						</li>
+					{%endfor%}
+					</ul>
+					<ul>
+					{%for second_key, value in data.items %}
+						<li>
+							{{second_key}} : {{value}}
+						</li>
+					{%endfor%}
+					</ul>
+				</td>
+			</tr>
+		{%endfor%}
+		{% endautoescape %}
+		</tbody>
+		</table>
+  	  </div>
+  	</article></li>
+    		
+	  
+  </ol>
+ 
+ 
+</section>
+
+{% endautoescape %} {% endblock %}

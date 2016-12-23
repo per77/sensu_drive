@@ -1,0 +1,95 @@
+{% load staticfiles %} 
+{% load isubscribe_extras %}
+	
+<tr id="{{event_data.entity|entity_id}}">					
+	
+	<td class="entity-checkbox">
+		<input type="checkbox" name="entity" value="{{event_data.entity}}">							
+	</td>
+		
+	<td class="entity-datetime">
+		<time datetime="{{event_data.timestamp}}"><script type="text/javascript">document.write(ts_localize({{event_data.timestamp}}));</script></time>						
+	</td>
+
+	<td class="entity-data">
+		<div id="entity-info-{{event_data.entity|entity_id}}">{{event_data.entity}}</div>
+		<!-- <span>{{event_data.output}}</span> -->
+		<script>	
+		$( "#entity-info-{{event_data.entity|entity_id}}" ).click(function() {
+			msgBox({{event_data.timestamp|safe}}, '{{event_data.entity}}', {{event_data.status|status_int}}, {{event_data.output|safe}}, {{event_data.silent|js_bool}}, {{event_data.ack|js_bool}});
+		});		
+		</script>
+	</td>
+
+	
+	<td class="entity-status">
+		<!-- {{event_data.status}} -->
+		{% if event_data.status == 1 %}
+		  <img src="{% static "isubscribe/images/warning-enabled-flag.jpg" %}" alt="warning-flag" id="img_w_{{ forloop.counter0 }}" data-status="1">
+		{% elif event_data.status == 2 %}
+		  <img src="{% static "isubscribe/images/critical-enabled-flag.jpg" %}" alt="critical-flag" id="img_c_{{ forloop.counter0 }}" data-status="2">
+		{% else %}
+		  <img src="{% static "isubscribe/images/unknown.gif" %}" alt="unknown-flag" id="img_uk_{{ forloop.counter0 }}" data-status="{{event_data.status}}">
+		{% endif %}				
+	</td>
+	
+	<td id="ack_{{event_data.entity|entity_id}}" class="entity-ack">
+	
+	{% if event_data.ack == False and event_data.silent == False %}				
+		<script>		
+				selector = $('<select>',{				
+					    id: 'ack_interval',
+					    change: function(){
+					    						
+       						var my_comment = prompt("Please enter your comment");
+       						
+       						if (my_comment == null){
+       							$(this).prop('selectedIndex',0);
+       							return;
+       						}
+       						if (my_comment.length == 0){
+       							my_comment = 'no comment';
+       						}
+					    
+							var request = $.ajax({
+								url: "{% url "ack" %}",
+							  	type: "POST",
+							  	data: { entity : '{{event_data.entity}}', ack_interval : $(this).val(), status: {{event_data.status}}, ack_comment: my_comment, csrfmiddlewaretoken: '{{ csrf_token }}'},
+							  	dataType: "json"
+							});
+							
+							request.done(function(msg) {
+								$(this).remove();				  	
+							});
+							
+							request.fail(function(jqXHR, textStatus) {
+							  	alert( "Request failed: " + textStatus );
+							});
+				  			
+					    	return false; 
+					    }
+					}
+				);
+				
+				selector.append($('<option></option>').val('').html('ack'));
+				
+			    for (i=1;i<=24;i++){
+			        selector.append($('<option></option>').val(i).html(i + 'h'));
+			    }
+			    
+			    selector.append($('<option></option>').val(48).html('2d'));
+			    
+			    $('#ack_{{event_data.entity|entity_id}}').append(selector);			    
+		</script>
+	{% elif event_data.silent == True %}
+		<img src="{% static "isubscribe/images/silenced.gif" %}" alt="silenced">
+		<span>{{ event_data.silent_comment }}</span>		
+	{% elif event_data.ack == True %}
+		<img src="{% static "isubscribe/images/silenced.gif" %}" alt="ack">
+		<span>{{ event_data.ack_comment }}</span>	
+	{% endif %}	
+					
+	</td>
+	
+	
+</tr>

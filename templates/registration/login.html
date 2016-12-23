@@ -1,0 +1,57 @@
+{% extends "isubscribe/base.html" %}{% load staticfiles %}
+{% block headstyles %}{% endblock %}
+{% block headscripts %} {% endblock %}
+
+{% block content %}
+{% autoescape off %}
+
+<!-- /#content -->
+
+<section id="content" class="body">
+ 
+  <ol id="posts-list" class="hfeed">
+  
+    
+	<li><article class="hentry"> 
+	
+	  <header>
+	    <h2 class="entry-title">
+		  	<form method="post" action="">
+			<table>
+			<tr>
+			    <td>{{ form.username.label_tag }}</td>
+			    <td>{{ form.username }}</td>
+			</tr>
+			<tr>
+			    <td>{{ form.password.label_tag }}</td>
+			    <td>{{ form.password }}</td>
+			</tr>
+			<tr>
+			    <td></td>
+			    <td><input type="submit" value="login"></td>
+			</tr>
+			</table>						
+			
+			<input type="hidden" name="next" value="{{ next }}" />
+			{% csrf_token %}
+			</form>
+					    
+		</h2>
+	  </header>
+	     	 
+           
+	</article></li>
+
+	{% if form.errors %}
+		<li><article class="hentry"> 
+			<p>Your username and password didn't match. Please try again.</p>
+		</article></li>
+	{% endif %}
+			  
+  </ol><!-- /#posts-list -->
+ 
+</section>
+
+<!-- /#content -->
+
+{% endautoescape %} {% endblock %}

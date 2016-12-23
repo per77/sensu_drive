@@ -1,0 +1,561 @@
+{% extends "isubscribe/base.html" %}{% load staticfiles %}
+{% block headstyles %}{% endblock %}
+{% block headscripts %} {% endblock %}
+
+{% block head %}
+
+<script>
+
+$(function() {
+    // When we're using HTTPS, use WSS too.
+    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    var msgsock = new ReconnectingWebSocket(ws_scheme + '://' + window.location.host + window.location.pathname, null, {debug: false, reconnectInterval: 3000, maxReconnectAttempts: 100});    
+    
+	msgsock.onopen = function(){
+      	console.log('connected!');
+      	$('#blocker').hide();
+    };
+    
+    msgsock.onmessage = function(message) {
+        var data = JSON.parse(message.data);
+        var msgbox = $("#msgbox");
+        
+        if (data.clean_signal){			
+			msgbox.find("tr").each(function(index) {
+				$(this).remove();
+			});
+			return false; 
+		}
+                        
+        var entity = data.entity
+        entity_id = entity.replace(/:\s*/g, "_");
+        entity_id = entity_id.replace(/\./g, "_");
+        var date = new Date(data.timestamp * 1000);
+        //var date_string = '<time datetime="' + date.toDateString() + " " + date.toTimeString() + '">' + date.toDateString() + " " + date.toTimeString() + '</time>';
+        var date_string = '<time datetime="' + data.timestamp + '">' + ts_localize(data.timestamp) + '</time>';
+                
+        var ele = $('<tr id="' + entity_id + '"></tr>');
+
+		if (data.status == 1){
+			status_img = '<img src="{% static "isubscribe/images/warning-enabled-flag.jpg" %}">';
+			status_description = 'Warning'; 
+		} else if (data.status == 2){
+			status_img = '<img src="{% static "isubscribe/images/critical-enabled-flag.jpg" %}">';
+			status_description = 'Critical'; 
+		} else {
+			status_img = '<img src="{% static "isubscribe/images/unknown.gif" %}">';
+			status_description = 'Unknown';
+		}
+		
+		description_element = '<span>' + status_description + '</span>';
+		output_element = '<span>' + data.output + '</span>';		
+		entity_element = $('<div>',{				
+			    id: 'entity-info-' + entity_id,
+			    text : entity,
+			    click: function(e){
+			    	e.preventDefault();
+					msgBox(data.timestamp, entity, data.status, data.output, data.silent, data.ack);
+			    	return false; 
+			    }
+			}
+		);
+		
+		checkbox = $('<input>',{				
+			    type: 'checkbox',
+			    name: 'entity',
+			    value: entity
+			    
+			}
+		);
+		
+		ele.append(
+            $("<td class=\"entity-checkbox\"></td>").html(checkbox)
+        );
+				
+        ele.append(
+            $("<td class=\"entity-datetime\"></td>").append(date_string)
+        );
+        
+        ele.append(        
+            //$("<td class=\"entity-data\"></td>").html(entity_element).append(output_element)
+            $("<td class=\"entity-data\"></td>").html(entity_element)
+        );
+        
+        ele.append(
+            $("<td class=\"entity-status\"></td>").append(status_img)
+        );
+        
+        if (data.silent){
+        	selector = '<img src="{% static "isubscribe/images/silenced.gif" %}" alt="silenced">';
+        	comment = '<span>' + data.silent_comment + '</span>';        	        
+        } else if (data.ack){        	
+        	selector = '<img src="{% static "isubscribe/images/silenced.gif" %}" alt="silenced">';
+        	comment = '<span>' + data.ack_comment + '</span>';
+        } else {
+        
+	        selector = $('<select>',{				
+					    id: 'ack_interval',
+					    change: function(e){
+					    	e.preventDefault();
+       						var my_comment = prompt("Please enter your comment");       						       					
+       						
+       						if (my_comment == null){
+       							$(this).prop('selectedIndex',0);
+       							return;
+       						}
+       						if (my_comment.length == 0){
+       							my_comment = 'no comment';
+       						}
+					    
+							var request = $.ajax({
+								url: "{% url "ack" %}",
+							  	type: "POST",
+							  	data: {entity : entity, ack_interval : $(this).val(), status: data.status, ack_comment: my_comment, csrfmiddlewaretoken: '{{ csrf_token }}'},
+							  	dataType: "json"
+							});
+							
+							request.done(function(msg) {
+								$(this).remove();				  	
+							});
+							
+							request.fail(function(jqXHR, textStatus) {
+							  	alert( "Request failed: " + textStatus );
+							});
+				  			
+					    	return false; 
+					    }
+				}
+			);
+			
+			selector.append($('<option></option>').val('').html('ack'));
+			
+	        for (i=1;i<=24;i++){
+				selector.append($('<option></option>').val(i).html(i + 'h'));
+			}
+			
+			selector.append($('<option></option>').val(48).html('2d'));
+			
+			comment = '';
+		}                
+        
+        ele.append(
+            $("<td class=\"entity-ack\"></td>").html(selector).append(comment)
+        );               
+        
+        if (data.status == 0){
+        	$('#' + entity_id).remove();
+        } else {
+        	$('#' + entity_id).remove();
+        	msgbox.prepend(ele);
+        }
+    };
+    
+    msgsock.onclose = function(){
+      	console.log('disconnected!');
+      	$('#blocker').show();
+    };
+    
+});
+
+</script>
+
+<script type="text/javascript">
+	function localize(t)
+	{
+	  var date = new Date(t * 1000);
+      var date_string = '<time datetime="' + date.toDateString() + " " + date.toTimeString() + '">' + date.toDateString() + " " + date.toTimeString() + '</time>';
+	  document.write(date_string);
+	}
+</script>
+
+
+<script type="text/javascript">
+	function msgBox(timestamp, entity, status, content, silent){
+		if (status == 0){
+			status_img = '<img src="{% static "isubscribe/images/okay-enabled-flag.png" %}">';
+			status_description = 'Okay'; 
+		} else if (status == 1){
+			status_img = '<img src="{% static "isubscribe/images/warning-enabled-flag.jpg" %}">';
+			status_description = 'Warning'; 
+		} else if (status == 2){
+			status_img = '<img src="{% static "isubscribe/images/critical-enabled-flag.jpg" %}">';
+			status_description = 'Critical'; 
+		} else {
+			status_img = '<img src="{% static "isubscribe/images/unknown.gif" %}">';
+			status_description = 'Unknown';
+		}
+		content_entry = '<li>' + ts_localize(timestamp) + ' ' + status_img + ' ' + content + '</li>'
+		$('#modalTitle').html(entity);
+        $('#modalBody').html(content_entry);
+        $('#modalButtonSilent').attr('data-entity', entity);        
+        $('#modalButtonResolve').attr('data-entity', entity);
+        $('#modalButtonHistory').attr('data-entity', entity);        
+        $('#modalButtonNotifications').attr('data-entity', entity);
+        $('#modalButtonCheckConfig').attr('data-entity', entity);        
+        $('#modalButtonCheckResult').attr('data-entity', entity);
+        $('#modalButtonSilent').attr('data-status', status);
+        $('#modalButtonSilent').attr('data-silent', silent);
+        $('#modalHeader').switchClass('modal-header modal-warning modal-critical modal-unknown', 'modal-header', queue=false);
+        if (silent){
+        	$('#modalButtonSilent').addClass( 'modal-critical' );
+        	$( "#modalButtonSilent" ).text('Silenced');
+        } else {
+        	$('#modalButtonSilent').removeClass( 'modal-critical' );
+        	$( "#modalButtonSilent" ).text('Silent');
+        }
+        /*
+        if (status === 1){
+        	$('.modal-header').addClass( 'modal-warning' );
+        }
+        else if (status === 2){
+        	$('.modal-header').addClass( 'modal-critical' );
+        }
+        else {
+        	$('.modal-header').addClass( 'modal-unknown' );
+        }
+        */
+        $('#msbBoxModal').modal();
+        $('#msbBoxModal').draggable({
+            handle: ".modal-header"
+        });
+        
+        return;
+    }
+</script>
+
+
+{% endblock %}
+
+<div id="fullCalModal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div id="modalHeader" class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span> <span class="sr-only">close</span></button>
+                <h4 id="modalTitle" class="modal-title"></h4>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <!--
+                <a class="btn btn-primary" id="eventUrl" target="_blank">Event Page</a>
+                -->
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% block nav %}        
+	<li class="active"><a href="#">events</a></li>
+	<li><a href="{% url 'entities' %}">iSubscribe</a></li>
+	<li><a href="{% url 'clients' %}">clients</a></li>
+	<li><a href="{% url 'subscriptions' %}">subscriptions</a></li>
+	<li><a href="{% url 'onduty' %}">on-duty</a></li>
+{% endblock %}
+
+
+{% block content %}
+{% autoescape off %}
+
+
+
+<div id="blocker">
+       <div>Connecting...</div>
+</div>
+
+
+<div id="msbBoxModal" class="modal fade" tabindex='-1'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span> <span class="sr-only">close</span></button>
+                <h4 id="modalTitle" class="modal-title"></h4>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+            <div class="modal-footer">
+            
+            	<button type="button" id="modalButtonCheckResult" class="btn btn-default" data-entity>Result</button>
+            	
+            	<script>	
+					$( "#modalButtonCheckResult" ).click(function(e) {
+						e.preventDefault();
+						entity = $(this).attr('data-entity');																
+						
+						var request = $.ajax({
+							url: "{% url "check_result" %}",
+						  	type: "POST",
+						  	data: {entity : entity, csrfmiddlewaretoken: '{{ csrf_token }}'},
+						  	dataType: "json"
+						});
+						
+						request.done(function(data) {
+							if (data == null) {
+								$('#modalBody').append('<li>no config data</li>');
+								return;
+							} else {
+								$('#modalBody').html('');
+							}
+			
+			
+							if (data.check.status == 0){
+								status_img = '<img src="{% static "isubscribe/images/okay-enabled-flag.png" %}">';
+								status_description = 'Okay'; 
+							} else if (data.check.status == 1){
+								status_img = '<img src="{% static "isubscribe/images/warning-enabled-flag.jpg" %}">';
+								status_description = 'Warning'; 
+							} else if (data.check.status == 2){
+								status_img = '<img src="{% static "isubscribe/images/critical-enabled-flag.jpg" %}">';
+								status_description = 'Critical'; 
+							} else {
+								status_img = '<img src="{% static "isubscribe/images/unknown.gif" %}">';
+								status_description = 'Unknown';
+							}							
+				 
+							history_entry = '<li>' + ts_localize(data.check.executed) + ' ' + status_img + ' ' + data.check.output + '</li>';
+							$('#modalBody').html('');
+							$('#modalBody').append(history_entry); 
+				 
+									
+						  	return false;
+						});
+						
+						request.fail(function(jqXHR, textStatus) {
+						  	alert( "Request failed: " + textStatus );
+						});
+					});		
+				</script>
+            
+            
+            	<button type="button" id="modalButtonCheckConfig" class="btn btn-default" data-entity>Config</button>
+            	
+            	<script>	
+					$( "#modalButtonCheckConfig" ).click(function(e) {
+						e.preventDefault();
+						entity = $(this).attr('data-entity');																
+						
+						var request = $.ajax({
+							url: "{% url "check_config" %}",
+						  	type: "POST",
+						  	data: {entity : entity, csrfmiddlewaretoken: '{{ csrf_token }}'},
+						  	dataType: "json"
+						});
+						
+						request.done(function(data) {	
+							if (data == null) {
+								$('#modalBody').append('<li>no config data</li>');
+								return;
+							} else {
+								$('#modalBody').html('');
+							}														
+    						config_data = '<pre><code>' + JSON.stringify(data, null, ' ') + '</code></pre>'
+    						$('#modalBody').html(''); 
+    						$('#modalBody').append(config_data); 
+													
+						  	return false;
+						});
+						
+						request.fail(function(jqXHR, textStatus) {
+						  	alert( "Request failed: " + textStatus );
+						});
+					});		
+				</script>
+            
+            	<button type="button" id="modalButtonHistory" class="btn btn-default" data-entity>History</button>
+            	
+            	<script>	
+					$( "#modalButtonHistory" ).click(function(e) {
+						e.preventDefault();
+						entity = $(this).attr('data-entity');																
+						
+						var request = $.ajax({
+							url: "{% url "entity_history" %}",
+						  	type: "POST",
+						  	data: {entity : entity, csrfmiddlewaretoken: '{{ csrf_token }}'},
+						  	dataType: "json"
+						});
+						
+						request.done(function(data) {
+							if (data.length < 2) {
+								$('#modalBody').append('<li>no history data</li>');
+								return;
+							} else {
+								$('#modalBody').html('');
+							}
+							for (var i = 0; i < data.length; i++) {
+								if (data[i].status == 0){
+									status_img = '<img src="{% static "isubscribe/images/okay-enabled-flag.png" %}">';
+									status_description = 'Okay'; 
+								} else if (data[i].status == 1){
+									status_img = '<img src="{% static "isubscribe/images/warning-enabled-flag.jpg" %}">';
+									status_description = 'Warning'; 
+								} else if (data[i].status == 2){
+									status_img = '<img src="{% static "isubscribe/images/critical-enabled-flag.jpg" %}">';
+									status_description = 'Critical'; 
+								} else {
+									status_img = '<img src="{% static "isubscribe/images/unknown.gif" %}">';
+									status_description = 'Unknown';
+								}							
+    							history_entry = '<li>' + ts_localize(data[i].timestamp) + ' ' + status_img + ' ' + data[i].output + '</li>' 
+    							$('#modalBody').append(history_entry); 
+							}						
+						  	return false;
+						});
+						
+						request.fail(function(jqXHR, textStatus) {
+						  	alert( "Request failed: " + textStatus );
+						});
+					});		
+				</script>
+				
+				<button type="button" id="modalButtonNotifications" class="btn btn-default" data-entity>Notifications</button>
+            	
+            	<script>	
+					$( "#modalButtonNotifications" ).click(function(e) {
+						e.preventDefault();
+						entity = $(this).attr('data-entity');																
+						
+						var request = $.ajax({
+							url: "{% url "entity_notify_history" %}",
+						  	type: "POST",
+						  	data: {entity : entity, csrfmiddlewaretoken: '{{ csrf_token }}'},
+						  	dataType: "json"
+						});
+						
+						request.done(function(data) {
+							if (data.length == 0) {
+								$('#modalBody').append('<li>no notifications history data</li>');
+								return;
+							} else {
+								$('#modalBody').html('');
+							}
+							for (var i = 0; i < data.length; i++) {
+								if (data[i].status == 0){
+									status_img = '<img src="{% static "isubscribe/images/okay-enabled-flag.png" %}">';
+									status_description = 'Okay'; 
+								} else if (data[i].status == 1){
+									status_img = '<img src="{% static "isubscribe/images/warning-enabled-flag.jpg" %}">';
+									status_description = 'Warning'; 
+								} else if (data[i].status == 2){
+									status_img = '<img src="{% static "isubscribe/images/critical-enabled-flag.jpg" %}">';
+									status_description = 'Critical'; 
+								} else {
+									status_img = '<img src="{% static "isubscribe/images/unknown.gif" %}">';
+									status_description = 'Unknown';
+								}							
+								history_entry = '<li>' + ts_localize(data[i].timestamp) + ' ' + status_img + ' user: ' + data[i].user + ' transport: ' + data[i].transport + '</li>'
+								$('#modalBody').append(history_entry); 
+							}						
+						  	return false;
+						});
+						
+						request.fail(function(jqXHR, textStatus) {
+						  	alert( "Request failed: " + textStatus );
+						});
+					});		
+				</script>
+            
+            	<button type="button" id="modalButtonResolve" class="btn btn-default" data-entity>Resolve</button>
+            	
+            	<script>	
+					$( "#modalButtonResolve" ).click(function(e) {
+						e.preventDefault();
+						entity = $(this).attr('data-entity');																							
+						
+						var request = $.ajax({
+							url: "{% url "resolve" %}",
+						  	type: "POST",
+						  	data: {entity : entity, csrfmiddlewaretoken: '{{ csrf_token }}'},
+						  	dataType: "json"
+						});
+						
+						request.done(function(msg) {
+							if (msg.result == 'okay'){
+						  		$('#msbBoxModal').modal('toggle');						  		
+						  	}
+						  	return;
+						});
+						
+						request.fail(function(jqXHR, textStatus) {
+						  	alert( "Request failed: " + textStatus );
+						});
+					});		
+				</script>
+            
+            	<button type="button" id="modalButtonSilent" class="btn btn-default" data-entity data-status data-silent data-ack>Silent</button>                
+                
+                <script>	
+					$( "#modalButtonSilent" ).click(function(e) {
+						e.preventDefault();
+						entity = $(this).attr('data-entity');
+						status = $(this).attr('data-status');
+						
+						if ($(this).attr('data-silent') == 'true'){
+							my_comment = 'no comment';	   						
+   						} else {
+   							var my_comment = prompt("Please enter your comment");
+	       						
+	   						if (my_comment == null){   							
+	   							return;
+	   						}
+	   						if (my_comment.length == 0){
+	   							my_comment = 'no comment';
+	   						}
+   						}
+						
+						var request = $.ajax({
+							url: "{% url "silent_toggle" %}",
+						  	type: "POST",
+						  	data: {entity : entity, status : status, silent_comment: my_comment, csrfmiddlewaretoken: '{{ csrf_token }}'},
+						  	dataType: "json"
+						});
+						
+						request.done(function(msg) {
+							if (msg.result == 'okay' && msg.silent){
+						  		$('#modalButtonSilent').addClass( 'modal-critical' );						  		
+						  	} else if (msg.result == 'okay'){
+						  		$( "#modalButtonSilent" ).text('Silent');
+						  	}
+						  	$('#modalButtonSilent').attr('data-silent', msg.silent);
+						  	$('#msbBoxModal').modal('toggle');
+						});
+						
+						request.fail(function(jqXHR, textStatus) {
+						  	alert( "Request failed: " + textStatus );
+						});
+					});		
+				</script>  
+				
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<section id="content" class="body">
+ 
+  <ol class="hfeed">
+  
+  	<li><article class="hentry">
+  	  <div class="entry-content" id="entities">
+  		<table>
+  			<tbody id="msgbox">
+  			{%for event, event_data in DATA.items %} 
+  				{%include "isubscribe/event_view_template.html" %}		    	
+			{%endfor%}
+			<tbody>  		
+  		</table>
+  	  </div>
+  	</article></li>
+    		
+	  
+  </ol>
+ 
+ 
+</section>
+
+
+
+{% endautoescape %} {% endblock %}

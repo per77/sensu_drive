@@ -1,0 +1,140 @@
+{% load i18n %}{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>sensudrive isubscribe</title>
+
+<link rel="shortcut icon" href="{%  static "isubscribe/images/favicon.ico" %}">
+<link rel="icon" type="image/png" href="{% static "isubscribe/images/favicon-32x32.png" %}" sizes="32x32" />
+<link rel="icon" type="image/png" href="{% static "isubscribe/images/favicon-16x16.png" %}" sizes="16x16" />
+ 
+<link rel="stylesheet" href="{% static "isubscribe/css/bootstrap.min.css" %}" type="text/css" />
+<link rel="stylesheet" href="{% static "isubscribe/css/main.css" %}" type="text/css" />
+ 
+<!--[if IE]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+<script src="{% static "isubscribe/js/jquery-3.1.1.min.js" %}"></script>
+<script src="{% static "isubscribe/js/jquery-ui.min.js" %}"></script>
+<script src="{% static "isubscribe/js/reconnecting-websocket.min.js" %}"></script>
+<script src="{% static "isubscribe/js/bootstrap.min.js" %}"></script>
+
+
+{% block head %}{% endblock %} 
+
+
+<script>
+function ts_localize(t){
+  	var d=new Date(t*1000);
+  	var datetime = d.getDate() + "/"
+                + (d.getMonth()+1)  + "/" 
+                + d.getFullYear() + " @ "
+                + ( (d.getHours()<10?'0':'') + d.getHours() ) + ":"
+                + ( (d.getMinutes()<10?'0':'') + d.getMinutes() ) + ":"
+                + ( (d.getSeconds()<10?'0':'') + d.getSeconds() );
+  	return datetime;
+}
+</script>
+
+<script>
+function matchRegExRule(str, rule) {
+  rule = rule.split("*").join(".*");
+  //rule = "^" + rule + "$"
+  var regex = new RegExp(rule);
+  return regex.test(str);
+}
+</script>
+ 
+</head> 
+<body id="index" class="home">
+
+
+
+<header id="banner" class="body">
+  <h1><a href="#">Sensu Drive</a></h1>
+ 
+  <nav><ul>
+  
+  {% block nav %}  
+    <li class="active"><a href="#">iSubscribe</a></li>  
+  {% endblock %}
+  
+  {% if request.user.is_authenticated and request.user.is_active %}
+  	
+  	<li class="profile"><a href="#" id="profile">{{ request.user.username }}</a></li>
+  	<script>
+  	$('#profile').click(function(e) {			
+		e.preventDefault();
+		$('#contactModal #modalContactTitle').text('Profile');
+        $('#settings').show();
+        
+        $('#contactModal').modal();
+        $('#contactModal').draggable({
+            handle: ".modal-header"
+        });
+	});
+  	</script>
+  	
+  {% endif %}
+  	
+  </ul></nav>
+
+</header>
+
+
+<!--
+<aside id="featured" class="body">
+  <article>
+
+	  <figure>
+	    <img src="{% static "isubscribe/images/sensu_drive-logo.png" %}" alt="Sensu Drive" />
+	  </figure>
+	  
+	  <hgroup> 
+	    <h2>Featured Article</h2>
+	    <h3><a href="#">HTML5 in Smashing Magazine!</a></h3>
+	  </hgroup>
+	  
+	  <p>Discover how to use Graceful Degradation and Progressive Enhancement techniques to achieve an outstanding,
+	  cross-browser <a href="http://dev.w3.org/html5/spec/Overview.html" rel="external">HTML5</a> and <a href="http://www.w3.org/TR/css3-roadmap/" rel="external">CSS3</a> website today!</p>
+ 
+  </article>
+</aside>
+-->
+
+{%include "isubscribe/user_settings.html" %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+
+
+{% block footer %}
+
+<footer id="contentinfo" class="body">
+
+  <address id="about" class="vcard body">
+    <span class="primary">
+      <strong><a href="#" class="fn url">Sensu Drive</a></strong>
+      <span class="role">iSubscribe</span>
+    </span>
+    
+    <img src="{% static "isubscribe/images/logo-small.png" %}" alt="Sensu Drive Logo" class="photo" />
+    <span class="bio">Sensu Drive offers easy way to subscribe for sensu events.</span>
+ 
+  </address>
+  
+  <address class="vcard body">
+  	<p>Powered by <a href="/">Itámár Lávender</a> © 2016.</p>
+  </address>
+  
+</footer> 
+
+
+{% endblock %}
+
+
+</body>
+</html>

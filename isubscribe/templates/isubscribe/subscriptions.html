@@ -1,0 +1,120 @@
+{% extends "isubscribe/base.html" %}{% load staticfiles %}
+{% block headstyles %}{% endblock %}
+{% block headscripts %} {% endblock %}
+
+{% block head %}
+{% endblock %} 
+
+
+{% block nav %}        
+	<li><a href="{% url 'events' %}">events</a></li>
+	<li><a href="{% url 'entities' %}">iSubscribe</a></li>
+	<li><a href="{% url 'clients' %}">clients</a></li>
+	<li class="active"><a href="{% url 'subscriptions' %}">subscriptions</a></li>
+	<li><a href="{% url 'onduty' %}">on-duty</a></li>
+{% endblock %}
+
+
+{% block content %}
+{% autoescape off %}
+
+<section id="content" class="body">
+ 
+  <ol id="posts-list" class="hfeed">
+  
+  	<li><article class="hentry"> 
+	
+	  <header>
+	  	<form method="get">
+	    	<h2 class="entry-title">		  	
+				<input id="subscription-filter" type="text" name="subscription-filter">		           
+			</h2>
+		</form>
+	  </header>
+	  
+	<script>
+		$('#subscription-filter').keypress(function(e) {			
+			if (e.keyCode === 10 || e.keyCode === 13){
+        		e.preventDefault();
+        		return false;
+        	}
+		});
+	
+		$("#subscription-filter").on("keyup", function(e) {
+			e.preventDefault();
+		    var value = $(this).val().toLowerCase();
+		    $("table tr").each(function(index) {
+	            $row = $(this);
+	
+	            var entity = $row.find("td:first").text().toLowerCase();            
+	
+	            //if ((entity.indexOf(value) > -1) && (value.length > 0)) {
+	            if (matchRegExRule(entity, value) && (value.length > 0)) {
+	                $(this).show();
+	            }
+	            else {
+	                $(this).hide();
+	            }
+		    });
+		});
+	</script>
+		  
+	  <footer class="post-info">
+        <abbr class="published" title="Filter button">
+          Search
+        </abbr>
+ 
+        <address class="vcard author">
+          <a class="url fn" href="" id="reset">show all</a>
+          <script>
+          	$('#reset').click(function(e){
+          		e.preventDefault();
+			    $("#subscription-filter").val("");
+			    $("table tr").each(function(index) {
+		            $div = $(this);          
+		            var entity = $div.text();
+		            $(this).show();		            
+			    });
+			    return false;
+			});
+		  </script>
+        </address>
+               
+        
+      </footer>	
+           
+	</article></li>
+  
+  
+  	<li><article>
+  	  <div class="entry-content" id="entities">
+  	    <table>
+  	    {% autoescape on %}
+  	    <tbody id="msgbox">
+  		{%for key, key_data in DATA.items %}
+  			<tr>
+				<td class="row-title">{{key}}</td> 
+				<td class="row-content">
+					<ul>
+					{%for client in key_data %}
+						<li>
+							{{client}}
+						</li>
+					{%endfor%}
+					</ul>
+				</td>
+			</tr>
+		{%endfor%}
+		</tbody>
+		{% endautoescape %}
+		</table>
+  	  </div>
+  	</article></li>
+    		
+	  
+  </ol>
+ 
+ 
+</section>
+
+{% endautoescape %} {% endblock %}

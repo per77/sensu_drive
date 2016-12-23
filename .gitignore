@@ -1,0 +1,12 @@
+-
+*.pid
+*.pyc
+*.log
+local_settings.py
+.buildpath
+.project
+.pydevproject
+scripts/
+static_collected/
+*.sh
+circus.ini

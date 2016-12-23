@@ -1,0 +1,304 @@
+{% extends "isubscribe/base.html" %}{% load staticfiles %}
+{% block headstyles %}{% endblock %}
+{% block headscripts %} {% endblock %}
+
+{% block head %}
+
+<link href="{% static "isubscribe/css/fullcalendar.css" %}" rel='stylesheet' />
+<link href="{% static "isubscribe/css/fullcalendar.print.css" %}" rel='stylesheet' media='print' />
+<script src="{% static "isubscribe/js/moment.min.js" %}"></script>
+<script src="{% static "isubscribe/js/fullcalendar.min.js" %}"></script>
+
+
+<script>
+
+	$(document).ready(function() {
+		
+		$('#calendar').fullCalendar({
+			header: {
+				left: 'prev,next today',
+				center: 'title',
+				right: 'month,agendaWeek,agendaDay,listWeek'
+			},
+			timezone: 'local',
+			navLinks: true, // can click day/week names to navigate views
+			editable: false,
+        	selectable: true,
+        	droppable: false,
+        	disableDragging: true,
+			eventLimit: true, // allow "more" link when too many events
+			events: '{% url 'onduty' %}?action=onduty_agenda',
+			
+			eventMouseover: function(event, jsEvent, view) {
+				//start = moment(event.start).format('YYYY-MM-DDTHH:mm:ssZ');
+				moment_format = 'DD/MM/YYYY HH:mm'; 
+				start = moment(event.start).format(moment_format);
+				end = moment(event.end).format(moment_format);				
+    			content = '<ul>';
+    			for (i = 0; i < event.description.length; i++) {
+					content += "<li>" + event.description[i] + "</li>";
+				}
+				content += '</ul><div>' + start + ' - ' + end + '</div>'
+    			$(this).popover({
+				            title: event.title,
+				            placement: 'right',
+				            content: content,
+				            html: true,
+                			container: 'body'
+                });
+	            $(this).popover('show');
+			},
+			
+			eventMouseout: function(event, jsEvent, view) {
+			    $(this).popover('hide');
+			},
+			/*
+			eventDrop: function(event, delta, revertFunc) {
+                if (!confirm("Are you sure about this change?")) {
+                    revertFunc();
+                }
+            },
+            */            
+			loading: function(bool) {
+				$('#blocker').toggle(bool);
+			},
+			
+			eventClick: function(event, jsEvent, view){
+				//console.log('click event id:' + event.id);				
+				//alert(event.privileges);
+				
+				moment_format = 'DD/MM/YYYY HH:mm';
+				start_human = moment(event.start).format(moment_format);
+				end_human = moment(event.end).format(moment_format);			
+				
+				content = '<ul id="eventDescription">';
+    			for (i = 0; i < event.description.length; i++) {
+					content += "<li>" + event.description[i] + "</li>";
+				}
+				content += '</ul>';
+                
+                $('#fullCalModal #modalTitle').html(event.title);
+                
+                if (event.privileges){  
+                	form_id = 'event-edit';
+                	$('#event-view').hide();
+                } else {
+                	form_id = 'event-view';
+                	$('#event-edit').hide();
+                }
+                
+                $('#' + form_id + ' input[name=id]').attr("value", event.id);                              
+                $('#' + form_id + ' input[name=start]').attr("value", start_human);
+                $('#' + form_id + ' input[name=start]').attr("data-datetime", event.instance_start);
+                $('#' + form_id + ' input[name=end]').attr("value", end_human);
+                $('#' + form_id + ' input[name=end]').attr("data-datetime", event.instance_end);                                
+                $('#' + form_id + ' input[name=repeat_until]').attr("value", event.repeat_until);
+                $('#' + form_id + ' select[name=repeat]').val(event.repeat);                
+                $('#' + form_id + ' select[name=event]').val(event.event_id);
+                $('#' + form_id + ' input[name=delete]').prop('checked', false);
+                $('#' + form_id).show();                
+                $('#fullCalModal #eventUrl').attr('href', window.location.pathname + '?event=' + event.id);
+                $('#fullCalModal #eventDescription').remove();
+                $('#fullCalModal #modalBody').append(content);
+                
+                $('#fullCalModal').modal();
+                $('#fullCalModal').draggable({
+		            handle: ".modal-header"
+		        });
+			},
+			
+			select: function(start, end, allDay, event, resourceId) {
+				//console.log('click event id:' + event.id);				
+				//alert(event.privileges);
+				
+				moment_format = 'DD/MM/YYYY HH:mm';
+				start_human = moment(start).format(moment_format);
+				end_human = moment(end).format(moment_format);				
+				
+				event.description = [];
+				
+				content = '<ul id="eventDescription">';
+    			for (i = 0; i < event.description.length; i++) {
+					content += "<li>" + event.description[i] + "</li>";
+				}
+				content += '</ul>';
+                
+                $('#fullCalModal #modalTitle').html(event.title);
+                
+                  
+                form_id = 'event-edit';
+                $('#event-view').hide();                
+                
+                $('#' + form_id + ' input[name=id]').attr("value", "new");                             
+                $('#' + form_id + ' input[name=start]').attr("value", start_human);
+                $('#' + form_id + ' input[name=start]').attr("data-datetime", start);
+                $('#' + form_id + ' input[name=end]').attr("value", end_human);
+                $('#' + form_id + ' input[name=end]').attr("data-datetime", end);                                
+                $('#' + form_id + ' input[name=repeat_until]').attr("value", event.repeat_until);
+                $('#' + form_id + ' select[name=repeat]').val(event.repeat);                
+                $('#' + form_id + ' select[name=event]').val(event.event_id);
+                $('#' + form_id + ' input[name=delete]').prop('checked', false);
+                $('#' + form_id).show(); 
+                               
+                $('#fullCalModal #eventUrl').attr('href', window.location.pathname + '?event=' + event.id);
+                $('#fullCalModal #eventDescription').remove();
+                $('#fullCalModal #modalTitle').html('New Event');
+                $('#fullCalModal #modalBody').append(content);
+                
+                $('#fullCalModal').modal();
+                $('#fullCalModal').draggable({
+		            handle: ".modal-header"
+		        });
+				
+    		},
+    		
+    		dayClick: function (date, allDay, jsEvent, view) {
+	        	$(this).children().popover({
+	                placement: 'right',
+	                content: function() {return $("#popover-content").html();},
+	                html: true,
+	                container: 'body'
+	            });
+	            $('.popover.in').remove();
+	            $(this).children().popover('show');
+	        }
+	        	
+		});
+		
+		//$('#blocker').hide();
+		
+	});
+
+</script>
+
+
+<script>
+
+$(function() {
+    // When we're using HTTPS, use WSS too.
+    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    var msgsock = new ReconnectingWebSocket(ws_scheme + '://' + window.location.host + window.location.pathname);    
+    
+	msgsock.onopen = function(){
+      	console.log('connected!');
+      	$('#blocker').hide();
+    };
+    
+    msgsock.onmessage = function(message) {
+    
+        var data = JSON.parse(message.data);
+        
+        if (data.action_type == 'onduty_toggle_alerts'){	
+			$('.onduty_toggle_alerts').toggleClass( "hide" );			
+			return false; 
+		}
+		
+    };
+    
+    msgsock.onclose = function(){
+      	console.log('disconnected!');
+      	$('#blocker').show();
+    };
+    
+});
+
+</script>
+
+
+{% endblock %} 
+
+
+{% block nav %}        
+	<li><a href="{% url 'events' %}">events</a></li>
+	<li><a href="{% url 'entities' %}">iSubscribe</a></li>
+	<li><a href="{% url 'clients' %}">clients</a></li>
+	<li><a href="{% url 'subscriptions' %}">subscriptions</a></li>
+	<li class="active"><a href="#">on-duty</a></li>
+{% endblock %}
+
+
+{% block content %}
+{% autoescape off %}
+
+
+
+<div id="blocker">
+       <div>Loading Events</div>
+</div>
+
+
+{%include "isubscribe/cal_event_template.html" %}
+    
+
+
+<section id="content" class="body">
+  
+  {% if request.user.is_active and request.user.is_staff %}
+			    
+	{% if onduty_disable_alerts %}
+		<div class="onduty_toggle_alerts hide">
+	{% else %}
+		<div class="onduty_toggle_alerts green">
+	{% endif %}
+	<form method="post" action="{% url 'onduty' %}">
+	<input type="submit" value="on-duty alerts" data-action="onduty_disable_alerts" />
+	{% csrf_token %}
+	</form>
+	</div>
+	
+	{% if onduty_disable_alerts %}
+		<div class="onduty_toggle_alerts red">
+	{% else %}
+		<div class="onduty_toggle_alerts hide">
+	{% endif %}
+	<form method="post" action="{% url 'onduty' %}">
+	<input type="submit" value="on-duty alerts" data-action="onduty_enable_alerts" />
+	{% csrf_token %}
+	</form>					
+	</div>
+	
+	<script>
+      	$('.onduty_toggle_alerts :submit').click(function(e){
+      		e.preventDefault();
+		    
+      		$('.onduty_toggle_alerts').toggleClass( "hide" );
+		    var my_action = $(this).attr("data-action");
+		    var my_csrf = $('input:hidden[name=csrfmiddlewaretoken]').attr("value");		    
+		    
+		    var request = $.ajax({
+				url: "{% url 'onduty' %}",
+			  	type: "POST",
+			  	data: {action : my_action, csrfmiddlewaretoken : my_csrf}
+			});
+			
+			request.done(function(msg) {			  	
+			  	console.log('onduty_toggle_alerts triggered by me and accepted by server');
+			  	$('.onduty_toggle_alerts').toggleClass( "hide" );
+			});
+			
+			request.fail(function(jqXHR, textStatus) {
+			  	alert( "Request failed: " + textStatus );
+			  	$('.onduty_toggle_alerts').toggleClass( "hide" );
+			});
+  			
+	    	return false;		            
+		});		
+	</script>
+
+  {% endif %}
+
+  	<ol class="hfeed">
+  
+	  	<li><article class="hentry">
+	  	  <div class="entry-content" id="entities">
+			
+			<div id='calendar'></div>			
+			
+	  	  </div>
+	  	</article></li>
+    		
+  	</ol>
+ 
+</section>
+
+{% endautoescape %} {% endblock %}

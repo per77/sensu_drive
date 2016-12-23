@@ -1,0 +1,46 @@
+{% extends "isubscribe/base.html" %}{% load staticfiles %}
+{% block headstyles %}{% endblock %}
+{% block headscripts %} {% endblock %}
+
+{% block head %}
+{% endblock %} 
+
+
+{% block nav %}        
+	<li><a href="{% url 'events' %}">events</a></li>
+	<li><a href="{% url 'entities' %}">iSubscribe</a></li>
+	<li><a href="{% url 'clients' %}">clients</a></li>
+	<li><a href="{% url 'subscriptions' %}">subscriptions</a></li>
+	<li><a href="{% url 'onduty' %}">on-duty</a></li>
+	<li class="active"><a href="{% url 'user_settings' %}">settings</a></li>	
+{% endblock %}
+
+
+{% block content %}
+{% autoescape off %}
+
+<section id="content" class="body">
+ 
+  <ol class="hfeed">
+  
+  	<li><article class="hentry">
+  	  <div class="entry-content" id="entities">
+  	    <table>
+  	    {% autoescape on %}
+  		{%for key, value in DATA.items %}
+  			<tr>
+				<td>{{key}}</td> <td>{{value}}</td>
+			</tr>
+		{%endfor%}
+		{% endautoescape %}
+		</table>
+  	  </div>
+  	</article></li>
+    		
+	  
+  </ol>
+ 
+ 
+</section>
+
+{% endautoescape %} {% endblock %}
