@@ -4,10 +4,10 @@ Sensu Drive
 Sensu Drive offers easy way to subscribe for sensu events with integration to your team's slack.
 <br>
 <br>
-along with the continuous delivery methodologies, while the demand of monitoring delivery in parallel to product delivery is covered by infrastructure as code such as puppet or chef configuring Sensu monitor.
-"Sensu Drive" was conceptualized to allow developers to subscribe and unsubscribe to notifications for monitors they or others deployed and to allow Devops team to opt in/out checks that are defining services that they want to wake up at night if critical.
+along with the continuous delivery methodologies, while the demand of continuous delivery of monitoring in parallel to product delivery is covered by infrastructure as code such as puppet or chef configuring Sensu monitor.
+"Sensu Drive" was conceptualized to allow developers to subscribe and unsubscribe to notifications for monitors they or others deployed and to allow Devops/NOC team to recieve notifications for checks that are defining services that they want to wake up at night for.
 <br>
-the concept suggest that Sensu will decide for which event to alert and "Sensu Drive" will decide who and when to notify.
+the concept suggest that Sensu will decide which event to alert for and "Sensu Drive" will decide who and when to notify.
 <br>
 <br>
  
@@ -38,6 +38,7 @@ the concept suggest that Sensu will decide for which event to alert and "Sensu D
   - silent
   - resolve, resolve check using Sensu API
   - display events history (last 100 events)
+  - display notifications history for each event (last 100 notifications)
   - display events config (none standalone checks)
   - events are in format of client:check
 
@@ -45,6 +46,7 @@ the concept suggest that Sensu will decide for which event to alert and "Sensu D
   - user can subscribe for warning, critical or both alerts for each entity
   - recovery will be sent only to subscribers that got an alert for that entity
   - display events history (last 100 events)
+  - display notifications history for each entity (last 100 notifications)
   - display events config (none standalone checks)
   - delete check result from Sensu API
   - entities are in format of client:check
@@ -324,10 +326,3 @@ pip install -r requirements.txt
 
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	```
-
-
-<!--
-  Title: Sensu Drive
-  Description: Sensu Drive offers easy way to subscribe for sensu events.
-  Author: Itamar Lavender
--->
