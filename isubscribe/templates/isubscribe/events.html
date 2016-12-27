@@ -263,6 +263,22 @@ $(function() {
        <div>Connecting...</div>
 </div>
 
+<div id="msgBoxModal" class="modal fade" tabindex='-1'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span> <span class="sr-only">close</span></button>
+                <h4 id="msg_modalTitle" class="modal-title"></h4>
+            </div>
+            <div id="msg_modalBody" class="modal-body"></div>
+            <div class="modal-footer">
+
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="msbBoxModal" class="modal fade" tabindex='-1'>
     <div class="modal-dialog">
@@ -548,7 +564,92 @@ $(function() {
 			<tbody>  		
   		</table>
   	  </div>
-  	</article></li>
+  	</article></li>  
+  
+  	<li><article class="hentry">
+		<div class="entry-content" id="subnavbar">
+      		<button type="button" class="btn btn-default" id="trends_link">Trends</button>
+      		<script type="text/javascript">
+				$('#trends_link').click(function(e){
+      				e.preventDefault();        
+			        
+			        var request = $.ajax({
+						url: "{% url "trends" %}",
+					  	type: "GET",
+					  	data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+					  	dataType: "json"
+					});
+					
+					request.done(function(data) {
+						$('#msg_modalTitle').html('Trends');
+						
+						if (data == null) {
+							$('#msg_modalBody').append('<li>no trends data</li>');
+							return;
+						} else {
+							$('#msg_modalBody').html('');
+						}											
+						
+						for (var i = 0; i < data.length; i++) {
+							if (data[i].trend_status == 0){
+								status_img = '<img src="{% static "isubscribe/images/okay-enabled-flag.png" %}">';
+								status_description = 'Okay'; 
+							} else if (data[i].trend_status == 1){
+								status_img = '<img src="{% static "isubscribe/images/warning-enabled-flag.jpg" %}">';
+								status_description = 'Warning'; 
+							} else if (data[i].trend_status >= 2){
+								status_img = '<img src="{% static "isubscribe/images/critical-enabled-flag.jpg" %}">';
+								status_description = 'Critical'; 
+							} else {
+								status_img = '<img src="{% static "isubscribe/images/unknown.gif" %}">';
+								status_description = 'Unknown';
+							}
+							
+							//trend_data = '<pre><code>' + JSON.stringify(data[i].trend_top3, null, ' ') + '</code></pre>'
+							
+							var trend_data = '';
+							var trend_times = ["Hour", "Weekday", "Date"];
+							
+							for (var t = 0; t < trend_times.length; t++) {								
+								for (key in data[i].trend_top3[trend_times[t]]) {
+									var d = new Date();
+									if (trend_times[t] == 'Hour'){
+										d.setUTCHours(key);
+										f_key = d.getHours() + ' (localtime)';
+									} else if (trend_times[t] == 'Weekday'){
+										f_key = key + ' (utc)';
+									} else if (trend_times[t] == 'Date'){
+										f_key = key + ' (utc)';
+									}
+									value = data[i].trend_top3[trend_times[t]][key];
+									trend_data += '<li>' + trend_times[t] + ': ' + f_key + ' sum: ' + value + '</li>';							
+								}
+							}
+							
+							//trend_entry = '<div>' + ts_localize(data[i].last_event_timestamp) + ' ' + data[i].entity + ' ' + status_img + ' ' + trend_data + '</div>' 
+							trend_entry = '<div><button data-toggle="collapse" data-target="#trend_data_details' + i + '">' + status_img + ' ' + data[i].entity + '</button><div id="trend_data_details' + i + '" class="collapse">' + trend_data + '</div></div>'
+							$('#msg_modalBody').append(trend_entry);
+						}
+												
+					  	return false;
+					});
+					
+					request.fail(function(jqXHR, textStatus) {
+					  	alert( "Request failed: " + textStatus );
+					});
+			         
+			        $('#msgBoxModal').modal();
+			        $('#msgBoxModal').draggable({
+			            handle: ".modal-header"
+			        });
+			        
+			        return;
+			    });
+			</script>
+      		
+		</div>		
+	</article></li>
+	
     		
 	  
   </ol>
