@@ -28,6 +28,7 @@ from isubscribe.tasks import sensu_event_resolve, sensu_client_delete, sensu_res
 from isubscribe.forms import ScheduledEventForm, ContactForm
 
 import logging
+from re import search
 logger = logging.getLogger(__name__)
 
 import redis
@@ -47,7 +48,12 @@ def index(request):
 
 @login_required(login_url=reverse_lazy('login'))
 def entities(request):
-            
+
+    '''            
+    for Test in r.scan_iter(match=':1:entity_*'):
+        print('************************************' + Test.decode('utf-8'))
+    '''    
+     
     logger.debug('entities view triggered by %s' % request.user.username)
     
     if request.method == 'POST' and 'search' in request.POST and request.POST['search'] != '':
@@ -60,31 +66,36 @@ def entities(request):
         Group("entities-private-%s" % request.user.id).send({
             "text": json.dumps({'flush_signal':True})
         })
-        
-        for word in cache.keys("entity_*%s*" % request.POST['search']):
-            entity = re.sub(r'^entity_', '', word)
-            status_1 = False       
-            status_2 = False 
-            try:
-                rule = cache.get('rule_' + entity)            
-                if '1' in rule and request.user.id in rule['1']:
-                    status_1 = True            
-                if '2' in rule and request.user.id in rule['2']:
-                    status_2 = True            
-            except:
-                pass
-            if 'silent_' + entity in cache.keys("silent_*"):                
-                silent = True
-            else:
-                silent = False
+    
+                     
+        #for word in cache.keys("entity_*%s*" % request.POST['search']):
+        for word in r.scan_iter(match=':1:entity_*'):
+            #if request.POST['search'].lower() in word.decode('utf-8').lower():
+            if re.search(request.POST['search'].lower(), word.decode('utf-8'), re.IGNORECASE):
+                #entity = re.sub(r'^entity_', '', word)            
+                entity = re.sub(r'^:1:entity_', '', word.decode('utf-8'))
+                status_1 = False       
+                status_2 = False 
+                try:
+                    rule = cache.get('rule_' + entity)            
+                    if '1' in rule and request.user.id in rule['1']:
+                        status_1 = True            
+                    if '2' in rule and request.user.id in rule['2']:
+                        status_2 = True            
+                except:
+                    pass
+                if 'silent_' + entity in cache.keys("silent_*"):                
+                    silent = True
+                else:
+                    silent = False
+                    
+                result = { 'entity': entity, 'status_1': status_1, 'status_2': status_2, 'silent': silent }
                 
-            result = { 'entity': entity, 'status_1': status_1, 'status_2': status_2, 'silent': silent }
-            
-            Group("entities-private-%s" % request.user.id).send({
-                "text": json.dumps(result)
-            })
-            
-            #logger.debug("entities view search: %s result: %s" % (request.POST['search'], json.dumps(data)))
+                Group("entities-private-%s" % request.user.id).send({
+                    "text": json.dumps(result)
+                })
+                
+                #logger.debug("entities view search: %s result: %s" % (request.POST['search'], json.dumps(result)))
             
         data['search'] = request.POST['search']        
         data['status'] = 0
@@ -396,6 +407,47 @@ def rmResult(request):
     return HttpResponse(json.dumps(data), mimetype)
 
 
+
+@login_required(login_url=reverse_lazy('login'))
+def redoCheck(request):
+
+    mimetype = 'application/json'   
+    data = {}
+    
+    if request.method == 'POST' and 'entity' in request.POST and request.POST['entity'] != '':        
+        
+        client_name, check_name = request.POST['entity'].split(':')
+        
+        API_URL = settings.SENSU_API_URL + '/request'
+        userAndPass = base64.b64encode(str.encode("%s:%s" % (settings.SENSU_API_USER, settings.SENSU_API_PASSWORD))).decode("ascii")
+        headers = { 'X_REQUESTED_WITH' :'XMLHttpRequest',
+                   'Accept': 'application/json, text/javascript, */*; q=0.01',
+                   'Authorization' : 'Basic %s' %  userAndPass }
+                
+        try:
+            
+            client_name, check_name = request.POST['entity'].split(':')
+            post_params = {"check": check_name}
+            
+            request = http.request('POST', API_URL, body=json.dumps(post_params), headers=headers)   
+            response = request.status
+                    
+            if response == 202:
+                data['result'] = 'accepted'
+            elif response == 404:
+                data['result'] = 'check not found'
+            else:
+                data['result'] = 'error'
+            
+            request.release_conn()
+        
+        except:
+            logger.error("redoCheck failed request check_name: %s" % check_name)
+            raise
+        
+    
+    
+    return HttpResponse(json.dumps(data), mimetype)
 
 
 @csrf_exempt
@@ -909,7 +961,6 @@ def test(request):
     return HttpResponse(json.dumps(data), mimetype)
 
 
-@permission_required('is_staff', login_url=reverse_lazy('login'))
 @login_required(login_url=reverse_lazy('login'))
 def trends(request):
     

@@ -6,6 +6,21 @@
 
 <script>
 
+function eventsStatus(){
+	var rowCount = $('#msgbox tr').length;
+	
+	
+	if (rowCount == 0){	
+		result = "for 800 years have i trained jedi and zero disturbance in the force I've seen not before.";
+	} else if (rowCount == 1){	
+		result = 'one disturbance in the force.';	
+	} else {	
+		result = rowCount + ' disturbances in the force.';	
+	} 
+	
+	$('#events-status').text(result);
+}
+
 $(function() {
     // When we're using HTTPS, use WSS too.
     var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
@@ -148,12 +163,16 @@ $(function() {
         	$('#' + entity_id).remove();
         	msgbox.prepend(ele);
         }
+        
+        eventsStatus();
     };
     
     msgsock.onclose = function(){
       	console.log('disconnected!');
       	$('#blocker').show();
     };
+    
+    eventsStatus();
     
 });
 
@@ -553,6 +572,10 @@ $(function() {
 <section id="content" class="body">
  
   <ol class="hfeed">
+  
+  	<li><article class="hentry" id="events-status">
+  		
+  	</article></li>
   
   	<li><article class="hentry">
   	  <div class="entry-content" id="entities">

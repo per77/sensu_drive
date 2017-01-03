@@ -294,6 +294,44 @@ $(function() {
         );
         
         
+        /*
+        redo_link = $('<a>',{
+        	id: 'redo_link_' + entity_id,
+		    href: '',
+		    
+		    click: function(e){						
+				e.preventDefault();				
+								
+				var request = $.ajax({
+					url: "{% url "redoCheck" %}",
+				  	type: "POST",
+				  	data: {entity : entity, csrfmiddlewaretoken: '{{ csrf_token }}'},
+				  	dataType: "json"
+				});
+				
+				request.done(function(msg) {
+					if (msg.result != 'okay'){						
+						alert( msg.result );
+				  	}						  	
+				});
+				
+				request.fail(function(jqXHR, textStatus) {
+				  	alert( "Request failed: " + textStatus );
+				});
+				
+				return false;
+		    }
+		    
+		}).append('<img src="{% static "isubscribe/images/redo.png" %}">');
+		
+		comment = '<span>check now</span>';
+          
+        ele.append(
+            $("<td class=\"entity-ack\"></td>").html(redo_link).append(comment)
+        );
+        
+        */
+        
         delete_result_link = $('<a>',{
         	id: 'delete_result_link_' + entity_id,
 		    href: '',
@@ -638,7 +676,8 @@ $(function() {
 			if (e.keyCode === 10 || e.keyCode === 13 || e.keyCode === 37 || e.keyCode === 39){
         		return true;
         	}
-		    var value = $(this).val().toLowerCase();
+		    //var value = $(this).val().toLowerCase();
+		    var value = $(this).val();
 		    var loading_counter = 0;
 		    filter_mysubscribe = $('#mysubscribe').attr("data-enabled");
 	        filter_silent = $('#silent').attr("data-enabled");
@@ -651,7 +690,7 @@ $(function() {
 					var request = $.ajax({
 						url: "{% url "entities" %}",
 					  	type: "POST",
-					  	data: {search : value, csrfmiddlewaretoken: '{{ csrf_token }}' },
+					  	data: {search : value.split("*").join(".*"), csrfmiddlewaretoken: '{{ csrf_token }}' },
 					  	dataType: "json"
 					});
 					

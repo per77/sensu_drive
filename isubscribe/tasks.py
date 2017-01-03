@@ -116,14 +116,15 @@ def trends_build():
             x_len = len(x)
             y_len = len(y)
         
-            if x_len >= 200 or settings.DEBUG == True:
+            if x_len >= 100 or settings.DEBUG == True:
                 
                 ts = x[0]
                 status = y[0]
-                
-                
+                                            
                 if ts < (NOW - 86400*10) and settings.DEBUG == False:
                     continue            
+                elif ts < (NOW - 86400*7) and status == 0 and settings.DEBUG == False:
+                    continue
                 else:                
                     x.append(NOW)
                     y.append(status)                
@@ -343,12 +344,12 @@ def sensu_entity_list():
         
         client = object['client']
         check = object['check']['name']        
-        cache.set('entity_' + client + ':' + check, object['check'], timeout=None)
+        cache.set('entity_' + client + ':' + check, object['check'], timeout=7200)
         
         if 'subscribers' in object['check']:
             subscribers.extend(object['check']['subscribers'])
     
-    cache.set('subscribers', list(set(subscribers)), timeout=None)
+    cache.set('subscribers', list(set(subscribers)), timeout=7200)
         
 
 
