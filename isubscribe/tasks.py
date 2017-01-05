@@ -75,8 +75,8 @@ def y_sum_by_time(x_arr, y_arr, top=None):
             idx = df_group.nlargest(top, 'Status') > 0
         else:
             idx = df_group['Status'].max() == df_group['Status']
-        
-        result[groupby] = {k: g['Status'].tolist() for k,g in df_group[idx].groupby(groupby)}
+                
+        result[groupby] = {k: g['Status'].replace(np.nan, 'None').tolist() for k,g in df_group[idx].groupby(groupby)}
             
     return result
 
@@ -116,7 +116,7 @@ def trends_build():
             x_len = len(x)
             y_len = len(y)
         
-            if x_len >= 100 or settings.DEBUG == True:
+            if x_len >= 500 or settings.DEBUG == True:
                 
                 ts = x[0]
                 status = y[0]
@@ -158,7 +158,7 @@ def trends_build():
             logger.error('failed %s' % name)
             pass
           
-    cache.set('trends_all', data, timeout=None)
+    cache.set('trends_all', data, timeout=settings.CACHE_TRENDS_TTL + 300)
                 
     return
 
@@ -264,12 +264,12 @@ def sensu_client_list():
     
     subscriptions = []
     
-    [ r.delete(subscription) for subscription in r.keys("subscription_*") ]
-    [ cache.delete(client) for client in cache.keys("client_*") ]
+    #[ r.delete(subscription) for subscription in r.keys("subscription_*") ]
+    #[ cache.delete(client) for client in cache.keys("client_*") ]
     
     for object in data:
         
-        cache.set('client_' + object['name'], object, timeout=None)
+        cache.set('client_' + object['name'], object, timeout=settings.CACHE_CLIENT_TTL + 300)
         
         if 'subscriptions' in object:            
             subscriptions.extend(object['subscriptions'])
@@ -278,7 +278,7 @@ def sensu_client_list():
                 logger.debug("sensu_client_list update subscription_%s adding %s" % (subscription, object['name']))
                 r.rpush('subscription_' + subscription, object['name'])
             
-    cache.set('subscriptions', list(set(subscriptions)), timeout=None)
+    cache.set('subscriptions', list(set(subscriptions)), timeout=settings.CACHE_CLIENT_TTL + 300)
         
 
 
@@ -309,7 +309,7 @@ def sensu_check_list():
     
     for object in data:
         logger.debug("sensu_check_list update check: %s" % object['name'])     
-        cache.set('check_' + object['name'], object, timeout=None)
+        cache.set('check_' + object['name'], object, timeout=settings.CACHE_CHECK_TTL + 300)
                 
 
                 
@@ -344,12 +344,12 @@ def sensu_entity_list():
         
         client = object['client']
         check = object['check']['name']        
-        cache.set('entity_' + client + ':' + check, object['check'], timeout=7200)
+        cache.set('entity_' + client + ':' + check, object['check'], timeout=settings.CACHE_ENTITY_TTL + 300)
         
         if 'subscribers' in object['check']:
             subscribers.extend(object['check']['subscribers'])
     
-    cache.set('subscribers', list(set(subscribers)), timeout=7200)
+    cache.set('subscribers', list(set(subscribers)), timeout=settings.CACHE_ENTITY_TTL + 300)
         
 
 

@@ -102,6 +102,8 @@ CACHES = {
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
+SESSION_COOKIE_AGE = 2592000
+#
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
@@ -112,6 +114,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        },
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -207,6 +212,12 @@ LOGGING = {
 
 EVENT_DATE_FORMAT = "%d-%m-%Y %H:%M"
 API_TOKEN = 'blabla_secret_key'
+
+
+CACHE_ENTITY_TTL = 3600
+CACHE_CLIENT_TTL = 7200
+CACHE_CHECK_TTL = 7200
+CACHE_TRENDS_TTL = 3600
 
 
 REDIS_HOST = '127.0.0.1'

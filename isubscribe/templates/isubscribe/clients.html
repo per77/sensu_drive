@@ -126,20 +126,19 @@ function rmClient(client, tr_id){
 					{{key}}
 				</td> 
 				<td class="row-content">
-					<ul>
+					
 					{%for subscription in data.subscriptions %}
 						<li>
 							subscription : {{subscription}}
 						</li>
 					{%endfor%}
-					</ul>
-					<ul>
+					
 					{%for second_key, value in data.items %}
 						<li>
 							{{second_key}} : {{value}}
 						</li>
 					{%endfor%}
-					</ul>
+					
 				</td>
 			</tr>
 		{%endfor%}

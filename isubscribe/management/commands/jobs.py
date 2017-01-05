@@ -60,12 +60,19 @@ class Command(BaseCommand):
         logger.info("%s - starting jobs schedule" % (__name__))
             
         try:
-                        
+            '''            
             schedule.every().hour.do(job_update_entities)
             schedule.every().hour.do(job_update_clients)
             schedule.every().hour.do(job_update_checks)
             schedule.every().hour.do(job_update_trends)
             #schedule.every(10).minutes.do(job_update_events)
+            '''
+            
+            schedule.every(settings.CACHE_ENTITY_TTL).seconds.do(job_update_entities)
+            schedule.every(settings.CACHE_CLIENT_TTL).seconds.do(job_update_clients)
+            schedule.every(settings.CACHE_CHECK_TTL).seconds.do(job_update_checks)
+            schedule.every(settings.CACHE_TRENDS_TTL).seconds.do(job_update_trends)
+            
             
             while True:
                 schedule.run_pending()
