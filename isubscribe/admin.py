@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 
 from .models import Contact, Subscribe, ScheduledEvent, ScheduledOccurrence, EventMembers
 
-# Define an inline admin descriptor for Employee model
+# Define an inline admin descriptor for Contact model
 # which acts a bit like a singleton
 class ContactInline(admin.StackedInline):
     model = Contact

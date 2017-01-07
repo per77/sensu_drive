@@ -697,6 +697,7 @@ def onduty(request):
             
         return HttpResponse(request.POST['action'])
     
+    # no good! DnD objects should be created when creating user
     if len(ScheduledEvent.objects.filter(event=1, members__in=[request.user.id])) < 1:
             logger.info('onduty view creating DnD object for user: %s' % (request.user.username))
             e = ScheduledEvent(event=1, description='DnD - ' + request.user.username)
