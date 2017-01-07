@@ -86,6 +86,15 @@ python3-cryptography
 <br>
 <br>
 pip install -r requirements.txt
+<br>
+<br>
+Slack team account (free) and token
+<br>
+you can use your test token but for real production deployment having a dedicated bot user is recommended.
+<br>
+https://api.slack.com/docs/oauth-test-tokens
+<br>
+https://api.slack.com/bot-users
 
 
 # Install/Configure
