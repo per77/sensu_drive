@@ -12,8 +12,6 @@ along with the continuous delivery methodologies, while the demand of continuous
 the concept suggest that Sensu will decide which event to alert for and "Sensu Drive" will decide who and when to notify.
 <br>
 <br>
- 
-
 
 - slack integration
   - create account for each user in slack team if not already exist
