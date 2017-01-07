@@ -13,5 +13,6 @@ RUN apt update && apt install -y \
 
 RUN mkdir /opt/sensudrive
 ADD . /opt/sensudrive/
+
 RUN pip3 install --upgrade pip
 RUN export PYCURL_SSL_LIBRARY=nss; pip3 install -q --upgrade --exists-action=w -r /opt/sensudrive/requirements.txt
