@@ -1,3 +1,5 @@
+[![Docker Automated buil](https://img.shields.io/docker/automated/jrottenberg/ffmpeg.svg)](https://hub.docker.com/r/sensudrive/sensu_drive/builds/)
+
 Sensu Drive
 ===========
 
