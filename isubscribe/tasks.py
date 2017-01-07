@@ -629,7 +629,7 @@ def slack_user_detect():
     
     for team_uesr in response.body['members']:
         
-        if team_uesr['deleted'] == False and team_uesr['name'] != 'slackbot':
+        if team_uesr['deleted'] == False and team_uesr['name'] != 'slackbot' and 'profile' in team_uesr and 'email' in team_uesr['profile']:
             
             slack_user_id = team_uesr['id']
             slack_user_name = team_uesr['name']
